@@ -7,8 +7,11 @@ optimizer = true
 optimizer_runs = 200
 
 remappings = [
-  "@openzeppelin/=lib/openzeppelin-contracts/",
+  "@openzeppelin/=lib/openzeppelin-contracts/contracts/",
 ]
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
 
 [rpc_endpoints]
 base_sepolia = "https://sepolia.base.org"
