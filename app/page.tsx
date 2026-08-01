@@ -39,12 +39,20 @@ export default function Home() {
           <a href="#labs" className="transition hover:text-white">For AI labs</a>
         </div>
         
-        <a
-          href="#waitlist"
-          className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-signal hover:text-white"
-        >
-          Join waitlist
-        </a>
+        <div className="flex items-center gap-3">
+          
+          <a  href="/upload"
+            className="hidden text-sm text-fog transition hover:text-white sm:block"
+          >
+            Register content
+          </a>
+          
+          <a  href="#waitlist"
+            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-signal hover:text-white"
+          >
+            Join waitlist
+          </a>
+        </div>
       </nav>
 
       {/* Hero */}
