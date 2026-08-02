@@ -24,8 +24,45 @@ export const ORIGIN_LOCK_ABI = [
     ],
   },
   {
+    type: "function",
+    name: "recordUsage",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "contentHash", type: "bytes32" },
+      { name: "licensee", type: "address" },
+      { name: "licenseScope", type: "string" },
+    ],
+    outputs: [{ name: "useIndex", type: "uint256" }],
+  },
+  {
+    type: "event",
+    name: "UsageRecorded",
+    inputs: [
+      { name: "contentHash", type: "bytes32", indexed: true },
+      { name: "licensee", type: "address", indexed: true },
+      { name: "amountPaid", type: "uint256", indexed: false },
+      { name: "useIndex", type: "uint256", indexed: false },
+      { name: "licenseScope", type: "string", indexed: false },
+    ],
+  },
+  {
     type: "error",
     name: "AlreadyRegistered",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "UnknownContent",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "ContentInactive",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "NotVerifier",
     inputs: [],
   },
 ] as const;

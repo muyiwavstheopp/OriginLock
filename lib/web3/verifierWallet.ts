@@ -1,24 +1,30 @@
-import { ethers } from "ethers";
-import OriginLockABI from "@/contracts/out/OriginLock.sol/OriginLock.json";
+import { createWalletClient, createPublicClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { sepolia } from "viem/chains";
+import { ORIGIN_LOCK_ABI, ORIGIN_LOCK_ADDRESS } from "@/lib/web3/contract";
 
 const RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL!;
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS!;
-const VERIFIER_PRIVATE_KEY = process.env.VERIFIER_PRIVATE_KEY!;
-
-let cachedContract: ethers.Contract | null = null;
+const VERIFIER_PRIVATE_KEY = process.env.VERIFIER_PRIVATE_KEY as `0x${string}`;
 
 /**
- * Returns a contract instance signed by the verifier wallet — the address
- * registered via setVerifier() on-chain, allowed to call recordUsage().
- * This wallet needs a small amount of Sepolia ETH to pay gas; it never
- * holds creator or lab funds itself, those move directly lab -> creator.
+ * Server-side wallet client for the verifier role — the address registered
+ * via setVerifier() on-chain, allowed to call recordUsage(). This wallet
+ * only pays its own gas; payment itself moves lab -> creator inside the
+ * contract call, this wallet never holds creator or lab funds.
  */
-export function getVerifierContract(): ethers.Contract {
-  if (cachedContract) return cachedContract;
+export function getVerifierClients() {
+  const account = privateKeyToAccount(VERIFIER_PRIVATE_KEY);
 
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
-  const signer = new ethers.Wallet(VERIFIER_PRIVATE_KEY, provider);
-  cachedContract = new ethers.Contract(CONTRACT_ADDRESS, OriginLockABI.abi, signer);
+  const walletClient = createWalletClient({
+    account,
+    chain: sepolia,
+    transport: http(RPC_URL),
+  });
 
-  return cachedContract;
+  const publicClient = createPublicClient({
+    chain: sepolia,
+    transport: http(RPC_URL),
+  });
+
+  return { walletClient, publicClient, account, abi: ORIGIN_LOCK_ABI, address: ORIGIN_LOCK_ADDRESS! };
 }

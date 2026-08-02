@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ethers } from "ethers";
-import { getVerifierContract } from "@/lib/web3/verifierWallet";
+import { decodeEventLog } from "viem";
+import { getVerifierClients } from "@/lib/web3/verifierWallet";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function POST(req: NextRequest) {
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
 
     const supabase = supabaseServer();
 
-    // Confirm this content is actually registered and active before touching the chain.
     const { data: record, error: recordError } = await supabase
       .from("content_records")
       .select("id, creator_wallet, license_terms")
@@ -27,34 +26,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Content not found." }, { status: 404 });
     }
 
-    const contract = getVerifierContract();
-    const contentHashBytes32 = ethers.id(contentHash); // keccak256 of the hex string, matching how it was registered on-chain
+    const { walletClient, publicClient, account, abi, address } = getVerifierClients();
 
-    // This call does three things atomically on-chain: pulls payment from
-    // labWallet (which must have already approved the contract to spend
-    // the payment token), forwards it to the creator, and emits
-    // UsageRecorded — the event this whole compliance trail depends on.
-    const tx = await contract.recordUsage(contentHashBytes32, labWallet, licenseScope);
-    const receipt = await tx.wait();
+    const contentHashBytes32 = `0x${contentHash}` as `0x${string}`;
 
-    if (!receipt || receipt.status !== 1) {
+    const hash = await walletClient.writeContract({
+      account,
+      address,
+      abi,
+      functionName: "recordUsage",
+      args: [contentHashBytes32, labWallet as `0x${string}`, licenseScope],
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status !== "success") {
       return NextResponse.json({ error: "Transaction failed on-chain." }, { status: 500 });
     }
 
-    // Pull the amount actually paid from the UsageRecorded event rather than
-    // trusting our own pre-transaction read of price — the chain is the
-    // source of truth for what was actually paid.
-    const event = receipt.logs
-      .map((log: any) => {
-        try {
-          return contract.interface.parseLog(log);
-        } catch {
-          return null;
+    // Decode the UsageRecorded event to get the amount actually paid,
+    // rather than trusting a pre-transaction read of price.
+    let amountPaid = record.license_terms?.price_per_use ?? "0";
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({ abi, data: log.data, topics: log.topics });
+        if (decoded.eventName === "UsageRecorded") {
+          amountPaid = (decoded.args as any).amountPaid.toString();
+          break;
         }
-      })
-      .find((parsed: any) => parsed?.name === "UsageRecorded");
-
-    const amountPaid = event ? event.args.amountPaid.toString() : record.license_terms?.price_per_use ?? "0";
+      } catch {
+        // Not a matching log, skip.
+      }
+    }
 
     const { error: insertError } = await supabase.from("license_events").insert({
       content_record_id: record.id,
@@ -64,20 +67,18 @@ export async function POST(req: NextRequest) {
       price_per_use: amountPaid,
       currency: record.license_terms?.currency ?? "USDC",
       license_scope: licenseScope,
-      onchain_tx_hash: receipt.hash,
-      block_number: receipt.blockNumber,
+      onchain_tx_hash: receipt.transactionHash,
+      block_number: Number(receipt.blockNumber),
     });
 
     if (insertError) {
-      // The on-chain payment already succeeded at this point — don't fail
-      // the request over a DB write issue, but flag it loudly for follow-up.
-      console.error("license_events insert failed after successful on-chain tx:", insertError, receipt.hash);
+      console.error("license_events insert failed after successful on-chain tx:", insertError, receipt.transactionHash);
     }
 
     return NextResponse.json({
       ok: true,
-      txHash: receipt.hash,
-      blockNumber: receipt.blockNumber,
+      txHash: receipt.transactionHash,
+      blockNumber: Number(receipt.blockNumber),
       amountPaid,
     });
   } catch (err) {
