@@ -113,6 +113,20 @@ export default function UploadForm({ accountWalletAddress }: UploadFormProps) {
 
       setTxHash(hash);
       setChainStatus("success");
+
+      // Persist on-chain status so this doesn't get lost if the user
+      // navigates away — this is what lets the dashboard show/retry
+      // registration later instead of only right after upload.
+      await fetch(`/api/content/${result.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onchainRegistered: true, onchainTxHash: hash }),
+      }).catch(() => {
+        // Non-fatal: the on-chain transaction already succeeded regardless.
+        // Worst case, the dashboard still shows this as unregistered and
+        // the creator can safely retry — recordUsage would just confirm
+        // AlreadyRegistered on-chain if they somehow tried register() again.
+      });
     } catch (err: any) {
       setChainStatus("error");
       const msg = err?.shortMessage || err?.message || "Transaction failed.";

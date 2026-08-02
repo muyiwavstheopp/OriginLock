@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   const supabase = supabaseServer();
   const { data: records } = await supabase
     .from("content_records")
-    .select("id, title, content_type, media_subtype, content_hash, license_terms, created_at")
+    .select("id, title, content_type, media_subtype, content_hash, license_terms, onchain_registered, onchain_tx_hash, created_at")
     .eq("creator_wallet", account.wallet_address)
     .order("created_at", { ascending: false });
 

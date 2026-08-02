@@ -52,3 +52,7 @@ alter table accounts enable row level security;
 -- in /api/auth/signup, never directly from the client.
 create policy "Users can read own account" on accounts
   for select using (auth.uid() = id);
+
+  alter table content_records
+  add column onchain_registered boolean not null default false,
+  add column onchain_tx_hash text;

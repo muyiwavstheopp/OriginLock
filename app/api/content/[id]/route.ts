@@ -23,12 +23,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: "No account found for this session." }, { status: 400 });
     }
 
-    const { pricePerUse } = await req.json();
-    const dollarAmount = parseFloat(pricePerUse);
-    if (isNaN(dollarAmount) || dollarAmount < 0) {
-      return NextResponse.json({ error: "Invalid price." }, { status: 400 });
-    }
-    const smallestUnit = Math.round(dollarAmount * 1_000_000);
+    const body = await req.json();
 
     // Service role bypasses RLS, so ownership is enforced here in code:
     // only rows whose creator_wallet matches the session's own account can
@@ -52,22 +47,47 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       );
     }
 
+    const updatePayload: Record<string, unknown> = {};
+
+    // Price update path
+    if (body.pricePerUse !== undefined) {
+      const dollarAmount = parseFloat(body.pricePerUse);
+      if (isNaN(dollarAmount) || dollarAmount < 0) {
+        return NextResponse.json({ error: "Invalid price." }, { status: 400 });
+      }
+      const smallestUnit = Math.round(dollarAmount * 1_000_000);
+
+      updatePayload.license_terms = {
+        ...(existing.license_terms ?? {}),
+        price_per_use: smallestUnit.toString(),
+        currency: "USDC",
+      };
+    }
+
+    // On-chain registration status path — called once the register()
+    // transaction confirms in the browser, so the dashboard can show
+    // and retry this later instead of only right after upload.
+    if (body.onchainRegistered !== undefined) {
+      updatePayload.onchain_registered = Boolean(body.onchainRegistered);
+      if (body.onchainTxHash) {
+        updatePayload.onchain_tx_hash = String(body.onchainTxHash);
+      }
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
+    }
+
     const { error: updateError } = await supabase
       .from("content_records")
-      .update({
-        license_terms: {
-          ...(existing.license_terms ?? {}),
-          price_per_use: smallestUnit.toString(),
-          currency: "USDC",
-        },
-      })
+      .update(updatePayload)
       .eq("id", params.id);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, pricePerUse: dollarAmount });
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

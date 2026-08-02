@@ -45,11 +45,12 @@ contract OriginLock is ReentrancyGuard {
     );
     event LicenseTermsUpdated(bytes32 indexed contentHash, uint256 newPricePerUse, bool active);
     event UsageRecorded(
-        bytes32 indexed contentHash,
-        address indexed licensee,
-        uint256 amountPaid,
-        uint256 useIndex
-    );
+    bytes32 indexed contentHash,
+    address indexed licensee,
+    uint256 amountPaid,
+    uint256 useIndex,
+    string licenseScope
+);
     event VerifierUpdated(address indexed verifier, bool allowed);
 
     error NotCreator();
@@ -117,7 +118,7 @@ contract OriginLock is ReentrancyGuard {
     ///         `contentHash`. Pulls `pricePerUse` from `licensee` (who must
     ///         have approved this contract to spend `paymentToken`) and
     ///         forwards it to the creator in the same transaction.
-    function recordUsage(bytes32 contentHash, address licensee)
+    function recordUsage(bytes32 contentHash, address licensee, string calldata licenseScope)
         external
         onlyVerifier
         nonReentrant
@@ -133,7 +134,7 @@ contract OriginLock is ReentrancyGuard {
             IERC20(rec.paymentToken).safeTransferFrom(licensee, rec.creator, rec.pricePerUse);
         }
 
-        emit UsageRecorded(contentHash, licensee, rec.pricePerUse, useIndex);
+        emit UsageRecorded(contentHash, licensee, rec.pricePerUse, useIndex, licenseScope);
     }
 
     /// @notice Add or remove an address allowed to call recordUsage().

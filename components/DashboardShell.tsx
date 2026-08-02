@@ -15,6 +15,8 @@ interface ContentRecord {
   media_subtype: string | null;
   content_hash: string;
   license_terms: { price_per_use?: string; currency?: string } | null;
+  onchain_registered: boolean;
+  onchain_tx_hash: string | null;
   created_at: string;
 }
 
@@ -193,7 +195,7 @@ export default function DashboardShell({ username, walletAddress, records }: Das
                 ) : (
                   <div className="divide-y divide-white/5">
                     {records.map((record) => (
-                      <ContentRow key={record.id} record={record} />
+                      <ContentRow key={record.id} record={record} accountWalletAddress={walletAddress} />
                     ))}
                   </div>
                 )}
