@@ -108,6 +108,7 @@ export default function ContentRow({ record, accountWalletAddress }: ContentRowP
         functionName: "register",
         args: [`0x${record.content_hash}` as `0x${string}`, SEPOLIA_USDC_ADDRESS, smallestUnit],
         chain: wallet.client.chain,
+        gas: BigInt(300000),
       });
 
       setTxHash(hash);

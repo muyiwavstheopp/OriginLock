@@ -109,6 +109,7 @@ export default function UploadForm({ accountWalletAddress }: UploadFormProps) {
         functionName: "register",
         args: [`0x${result.contentHash}` as `0x${string}`, SEPOLIA_USDC_ADDRESS, pricePerUseSmallestUnit],
         chain: wallet.client.chain,
+        gas: BigInt(300000),
       });
 
       setTxHash(hash);
