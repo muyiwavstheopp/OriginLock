@@ -19,8 +19,17 @@ function truncate(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export default function UploadForm() {
+interface UploadFormProps {
+  // The wallet address permanently tied to this account at signup.
+  // Used only to gate the on-chain registration step below.
+  accountWalletAddress: string;
+}
+
+export default function UploadForm({ accountWalletAddress }: UploadFormProps) {
   const wallet = useWallet();
+
+  const walletMismatch =
+    !!wallet.address && wallet.address.toLowerCase() !== accountWalletAddress.toLowerCase();
 
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [uploadMessage, setUploadMessage] = useState("");
@@ -35,12 +44,6 @@ export default function UploadForm() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (!wallet.address) {
-      setUploadStatus("error");
-      setUploadMessage("Connect your wallet first.");
-      return;
-    }
 
     setUploadStatus("pending");
     setUploadMessage("");
@@ -57,7 +60,6 @@ export default function UploadForm() {
     const dollarAmount = parseFloat(formData.get("pricePerUse") as string);
     const smallestUnit = BigInt(Math.round((isNaN(dollarAmount) ? 0 : dollarAmount) * 1_000_000));
     formData.set("pricePerUse", smallestUnit.toString());
-    formData.set("creatorWallet", wallet.address);
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
@@ -81,6 +83,14 @@ export default function UploadForm() {
 
   async function handleRegisterOnChain() {
     if (!wallet.client || !wallet.address || !result) return;
+
+    if (walletMismatch) {
+      setChainStatus("error");
+      setChainMessage(
+        `Connected wallet doesn't match your account's registered wallet (${truncate(accountWalletAddress)}). Switch accounts in MetaMask and try again.`
+      );
+      return;
+    }
 
     if (!ORIGIN_LOCK_ADDRESS) {
       setChainStatus("error");
@@ -168,15 +178,34 @@ export default function UploadForm() {
             <>
               <p className="text-xs text-fog/60">
                 This is only saved to the database so far. To make it enforceable on-chain,
+                connect the wallet tied to your account ({truncate(accountWalletAddress)}) and
                 sign a transaction registering it on OriginLock&apos;s Sepolia contract.
               </p>
-              <button
-                onClick={handleRegisterOnChain}
-                disabled={chainStatus === "pending"}
-                className="mt-3 w-full rounded-full bg-seal px-5 py-3 text-sm font-semibold text-indigo-deep transition hover:bg-seal/90 disabled:opacity-60"
-              >
-                {chainStatus === "pending" ? "Confirm in wallet…" : "Register on-chain"}
-              </button>
+
+              {!wallet.address ? (
+                <button
+                  type="button"
+                  onClick={wallet.connect}
+                  disabled={wallet.connecting}
+                  className="mt-3 w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-signal disabled:opacity-60"
+                >
+                  {wallet.connecting ? "Connecting…" : "Connect wallet"}
+                </button>
+              ) : walletMismatch ? (
+                <p className="mt-3 text-center text-xs text-red-300">
+                  Connected wallet ({truncate(wallet.address)}) doesn&apos;t match your
+                  account&apos;s registered wallet ({truncate(accountWalletAddress)}). Switch
+                  accounts in MetaMask.
+                </p>
+              ) : (
+                <button
+                  onClick={handleRegisterOnChain}
+                  disabled={chainStatus === "pending"}
+                  className="mt-3 w-full rounded-full bg-seal px-5 py-3 text-sm font-semibold text-indigo-deep transition hover:bg-seal/90 disabled:opacity-60"
+                >
+                  {chainStatus === "pending" ? "Confirm in wallet…" : "Register on-chain"}
+                </button>
+              )}
               {chainStatus === "error" && (
                 <p className="mt-2 text-center text-xs text-red-300">{chainMessage}</p>
               )}
@@ -202,24 +231,16 @@ export default function UploadForm() {
     >
       <div>
         <label className="block font-mono text-xs uppercase tracking-wide text-fog/60">
-          Wallet
+          Registering as
         </label>
-        {wallet.address ? (
-          <div className="mt-2 flex items-center justify-between rounded-lg border border-white/10 px-3 py-2">
-            <span className="font-mono text-sm text-white">{truncate(wallet.address)}</span>
-            <span className="h-2 w-2 rounded-full bg-signal" />
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={wallet.connect}
-            disabled={wallet.connecting}
-            className="mt-2 w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white/90 transition hover:border-signal disabled:opacity-60"
-          >
-            {wallet.connecting ? "Connecting…" : "Connect wallet"}
-          </button>
-        )}
-        {wallet.error && <p className="mt-1 text-xs text-red-300">{wallet.error}</p>}
+        <div className="mt-2 flex items-center justify-between rounded-lg border border-white/10 px-3 py-2">
+          <span className="font-mono text-sm text-white">{truncate(accountWalletAddress)}</span>
+          <span className="h-2 w-2 rounded-full bg-signal" />
+        </div>
+        <p className="mt-1 text-xs text-fog/50">
+          The wallet tied to your account. No wallet connection is needed to upload —
+          it&apos;s only required later to register on-chain.
+        </p>
       </div>
 
       <div>
@@ -265,10 +286,10 @@ export default function UploadForm() {
 
       <button
         type="submit"
-        disabled={uploadStatus === "pending" || !wallet.address}
+        disabled={uploadStatus === "pending"}
         className="w-full rounded-full bg-signal px-5 py-3 text-sm font-semibold text-white transition hover:bg-signal/90 disabled:opacity-60"
       >
-        {uploadStatus === "pending" ? "Registering…" : "Register content"}
+        {uploadStatus === "pending" ? "Registering…" : "Register"}
       </button>
 
       {uploadStatus === "error" && (

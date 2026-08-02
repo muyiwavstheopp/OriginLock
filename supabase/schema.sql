@@ -34,3 +34,21 @@ create table if not exists content_keys (
 
 alter table content_keys enable row level security;
 -- No public policies — only the service role (server-side) can ever touch this table.
+
+-- Ties a Supabase Auth user to a username and the wallet address they proved
+-- ownership of at signup time. The wallet address is set once and never
+-- changed by the app — it's the permanent creatorWallet used for uploads.
+create table if not exists accounts (
+  id uuid primary key references auth.users(id) on delete cascade,
+  username text not null unique,
+  wallet_address text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table accounts enable row level security;
+
+-- Users can read their own account row (needed so the client can display
+-- username/wallet address); all writes go through the service role key
+-- in /api/auth/signup, never directly from the client.
+create policy "Users can read own account" on accounts
+  for select using (auth.uid() = id);

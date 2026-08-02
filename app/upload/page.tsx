@@ -1,6 +1,27 @@
+import { redirect } from "next/navigation";
+import { supabaseSession } from "@/lib/supabaseSession";
 import UploadForm from "@/components/UploadForm";
 
-export default function UploadPage() {
+export default async function UploadPage() {
+  const supabase = supabaseSession();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("username, wallet_address")
+    .eq("id", user.id)
+    .single();
+
+  if (!account) {
+    redirect("/login");
+  }
+
   return (
     <main className="min-h-screen bg-hero-gradient px-6 py-16">
       <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
@@ -14,6 +35,12 @@ export default function UploadPage() {
           </span>
         </a>
 
+        <div className="mb-2 w-full max-w-2xl text-left">
+          <a href="/dashboard" className="text-xs text-fog/70 underline hover:text-white">
+            ← Back to dashboard
+          </a>
+        </div>
+
         <h1 className="font-display text-3xl font-medium tracking-tight text-white sm:text-4xl">
           Register your work
         </h1>
@@ -23,7 +50,7 @@ export default function UploadPage() {
         </p>
 
         <div className="mt-10 flex w-full justify-center">
-          <UploadForm />
+          <UploadForm accountWalletAddress={account.wallet_address} />
         </div>
       </div>
     </main>

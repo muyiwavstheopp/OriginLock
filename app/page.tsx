@@ -1,5 +1,4 @@
 import FingerprintToken from "@/components/FingerprintToken";
-import WaitlistForm from "@/components/WaitlistForm";
 
 const STEPS = [
   {
@@ -38,19 +37,20 @@ export default function Home() {
           <a href="#creators" className="transition hover:text-white">For creators</a>
           <a href="#labs" className="transition hover:text-white">For AI labs</a>
         </div>
-        
+
         <div className="flex items-center gap-3">
           
-          <a  href="/upload"
-            className="hidden text-sm text-fog transition hover:text-white sm:block"
+          <a  href="/login"
+            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-white/40 hover:text-white"
           >
-            Register content
+            Log in
           </a>
+
           
-          <a  href="#waitlist"
-            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-signal hover:text-white"
+          <a  href="/signup"
+            className="rounded-full bg-signal px-4 py-2 text-sm font-semibold text-white transition hover:bg-signal/90"
           >
-            Join waitlist
+            Register
           </a>
         </div>
       </nav>
@@ -75,13 +75,6 @@ export default function Home() {
           enforceable, on-chain terms — and get paid every time it's actually
           used, not just once.
         </p>
-
-        <div id="waitlist" className="mt-9 flex w-full flex-col items-center">
-          <WaitlistForm />
-          <p className="mt-3 font-mono text-xs text-fog/70">
-            no wallet required to join the waitlist
-          </p>
-        </div>
       </section>
 
       {/* How it works */}

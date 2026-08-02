@@ -5,20 +5,43 @@ import { sha256Hex } from "@/lib/hash";
 import { generateFileKey, encryptBuffer, wrapFileKey } from "@/lib/crypto";
 import { uploadEncryptedFile } from "@/lib/storage";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseSession } from "@/lib/supabaseSession";
 
 export async function POST(req: NextRequest) {
   try {
+    // Who's uploading comes from the session, never from the request body —
+    // the client can no longer just claim a wallet address.
+    const session = supabaseSession();
+    const {
+      data: { user },
+    } = await session.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "You must be logged in to upload." }, { status: 401 });
+    }
+
+    const { data: account, error: accountError } = await session
+      .from("accounts")
+      .select("wallet_address")
+      .eq("id", user.id)
+      .single();
+
+    if (accountError || !account) {
+      return NextResponse.json(
+        { error: "No wallet is tied to this account." },
+        { status: 400 }
+      );
+    }
+
+    const creatorWallet = account.wallet_address;
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const creatorWallet = formData.get("creatorWallet") as string | null;
     const pricePerUse = formData.get("pricePerUse") as string | null;
     const title = formData.get("title") as string | null;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided." }, { status: 400 });
-    }
-    if (!creatorWallet) {
-      return NextResponse.json({ error: "Missing creator wallet address." }, { status: 400 });
     }
 
     const plaintext = Buffer.from(await file.arrayBuffer());
