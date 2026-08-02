@@ -1,18 +1,25 @@
 import FingerprintToken from "@/components/FingerprintToken";
+import HeroBackground from "@/components/HeroBackground";
+import { FeatureIcons } from "@/components/FeatureIcons";
+import { SocialIcons } from "@/components/SocialIcons";
+import SiteNav from "@/components/SiteNav";
 
 const STEPS = [
   {
     n: "01",
+    icon: FeatureIcons.Licensing,
     title: "Tag your work",
     body: "Upload an image, track, manuscript, or codebase. OriginLock fingerprints it and sets your licensing terms — what AI labs can do with it, and what they owe you per use.",
   },
   {
     n: "02",
+    icon: FeatureIcons.AITrainingAccess,
     title: "It gets matched",
     body: "When a model is trained or fine-tuned on data that matches your fingerprint, OriginLock detects the match and logs it to a tamper-evident on-chain ledger.",
   },
   {
     n: "03",
+    icon: FeatureIcons.RoyaltyFlow,
     title: "You get paid",
     body: "Every verified use triggers a royalty payment automatically — no invoices, no chasing, no platform sitting in the middle deciding what you're owed.",
   },
@@ -22,41 +29,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-hero-gradient">
       {/* Nav */}
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-7">
-        <div className="flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <rect x="1" y="1" width="20" height="20" rx="6" stroke="#4F7CFF" strokeWidth="1.6" />
-            <path d="M7 11a4 4 0 118 0 4 4 0 01-8 0z" stroke="#FFB84D" strokeWidth="1.6" />
-          </svg>
-          <span className="font-display text-[15px] font-medium tracking-tight text-white">
-            OriginLock
-          </span>
-        </div>
-        <div className="hidden items-center gap-8 text-sm text-fog md:flex">
-          <a href="#how" className="transition hover:text-white">How it works</a>
-          <a href="#creators" className="transition hover:text-white">For creators</a>
-          <a href="#labs" className="transition hover:text-white">For AI labs</a>
-        </div>
-
-        <div className="flex items-center gap-3">
-          
-          <a  href="/login"
-            className="rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-white/40 hover:text-white"
-          >
-            Log in
-          </a>
-
-          
-          <a  href="/signup"
-            className="rounded-full bg-signal px-4 py-2 text-sm font-semibold text-white transition hover:bg-signal/90"
-          >
-            Register
-          </a>
-        </div>
-      </nav>
+      <SiteNav current="home" />
 
       {/* Hero */}
-      <section className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pb-28 pt-16 text-center">
+      <section className="relative flex flex-col items-center overflow-hidden px-6 pb-28 pt-16 text-center">
+        <HeroBackground className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
+        <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center">
         {/* floating fingerprint tokens */}
         <div className="relative mb-16 h-32 w-full max-w-lg pointer-events-none">
           <FingerprintToken kind="document" size={56} className="float-slow absolute left-0 top-4" />
@@ -75,6 +53,7 @@ export default function Home() {
           enforceable, on-chain terms — and get paid every time it's actually
           used, not just once.
         </p>
+        </div>
       </section>
 
       {/* How it works */}
@@ -90,7 +69,8 @@ export default function Home() {
           <div className="mt-14 grid gap-10 sm:grid-cols-3">
             {STEPS.map((step) => (
               <div key={step.n} className="border-t border-white/10 pt-5">
-                <span className="font-mono text-sm text-seal">{step.n}</span>
+                <step.icon className="h-10 w-10" />
+                <span className="mt-4 block font-mono text-sm text-seal">{step.n}</span>
                 <h3 className="mt-3 font-display text-lg font-medium text-white">
                   {step.title}
                 </h3>
@@ -102,6 +82,17 @@ export default function Home() {
       </section>
 
       <footer className="border-t border-white/5 px-6 py-10 text-center">
+        <div className="mb-4 flex items-center justify-center gap-4">
+          <a href="https://x.com/originlock" target="_blank" rel="noopener noreferrer">
+            <SocialIcons.X className="h-4 w-4 text-fog/50 transition hover:text-white" />
+          </a>
+          <a href="https://linkedin.com/company/originlock" target="_blank" rel="noopener noreferrer">
+            <SocialIcons.LinkedIn className="h-4 w-4 text-fog/50 transition hover:text-white" />
+          </a>
+          <a href="https://github.com/muyiwavstheopp" target="_blank" rel="noopener noreferrer">
+            <SocialIcons.GitHub className="h-4 w-4 text-fog/50 transition hover:text-white" />
+          </a>
+        </div>
         <p className="font-mono text-xs text-fog/60">
           OriginLock — a licensing and royalty ledger for AI training data.
         </p>

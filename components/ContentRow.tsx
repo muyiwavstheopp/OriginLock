@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icons } from "@/components/OriginLockIcons";
 
 interface ContentRecord {
   id: string;
@@ -56,11 +57,17 @@ export default function ContentRow({ record }: { record: ContentRecord }) {
 
   return (
     <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-6 py-4">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-white">
-          {record.title || `${record.content_type ?? "Untitled"} — ${record.media_subtype ?? ""}`}
-        </p>
-        <p className="mt-0.5 font-mono text-xs text-fog/50">{truncateHash(record.content_hash)}</p>
+      <div className="flex min-w-0 items-start gap-2">
+        <Icons.Dataset className="mt-0.5 h-4 w-4 shrink-0 text-fog/40" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-white">
+            {record.title || `${record.content_type ?? "Untitled"} — ${record.media_subtype ?? ""}`}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 font-mono text-xs text-fog/50">
+            <Icons.Fingerprint className="h-3.5 w-3.5 shrink-0" />
+            {truncateHash(record.content_hash)}
+          </p>
+        </div>
       </div>
 
       {editing ? (
@@ -76,7 +83,10 @@ export default function ContentRow({ record }: { record: ContentRecord }) {
           <span className="text-xs text-fog/50">USDC</span>
         </div>
       ) : (
-        <span className="font-mono text-sm text-white">{savedPrice} USDC</span>
+        <span className="flex items-center gap-1.5 font-mono text-sm text-white">
+          <Icons.Royalty className="h-3.5 w-3.5 text-fog/50" />
+          {savedPrice} USDC
+        </span>
       )}
 
       <div className="flex items-center gap-2 whitespace-nowrap">

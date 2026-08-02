@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "OriginLock — Every use, traced. Every creator, paid.",
   description:
     "OriginLock lets creators license their work for AI training with enforceable, on-chain terms — and get paid every time it's used.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
