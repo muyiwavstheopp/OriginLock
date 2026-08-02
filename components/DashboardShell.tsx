@@ -63,22 +63,61 @@ const NAV: { id: Tab; label: string; icon: JSX.Element }[] = [
 
 export default function DashboardShell({ username, walletAddress, records }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("overview");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-hero-gradient">
       <HeroBackground className="pointer-events-none absolute inset-0 z-0 h-full w-full" />
 
+      {/* Mobile top bar */}
+      <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-white/10 bg-ink/90 px-4 py-3 backdrop-blur md:hidden">
+        <Logo className="h-5" />
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 text-white"
+          aria-label="Open menu"
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile backdrop */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 z-30 bg-black/60 md:hidden"
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="relative z-10 flex w-60 flex-col border-r border-white/10 bg-ink/60 px-4 py-6">
-        <a href="/" className="mb-8 flex items-center px-2">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-white/10 bg-ink/95 px-4 py-6 transition-transform duration-200 md:relative md:z-10 md:translate-x-0 md:bg-ink/60 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <a href="/" className="mb-8 flex items-center justify-between px-2">
           <Logo className="h-6" />
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-fog/60 md:hidden"
+            aria-label="Close menu"
+          >
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+              <path d="M3 3L15 15M15 3L3 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </button>
         </a>
 
         <nav className="flex flex-1 flex-col gap-1">
           {NAV.map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => {
+                setTab(item.id);
+                setMobileMenuOpen(false);
+              }}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${
                 tab === item.id
                   ? "bg-signal/15 text-white"
@@ -106,7 +145,7 @@ export default function DashboardShell({ username, walletAddress, records }: Das
       </aside>
 
       {/* Main content */}
-      <div className="relative z-10 flex-1 px-10 py-8">
+      <div className="relative z-10 flex-1 px-4 pb-8 pt-20 sm:px-6 md:px-10 md:pt-8">
         <div className="mx-auto max-w-3xl">
           <div className="flex items-center justify-between">
             <div>
@@ -122,11 +161,12 @@ export default function DashboardShell({ username, walletAddress, records }: Das
             {tab === "overview" && (
               
               <a  href="/upload"
-  className="flex items-center gap-2 rounded-full bg-signal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-signal/90"
->
-  <Icons.License className="h-4 w-4" />
-  Register new content
-</a>
+                className="flex items-center gap-2 rounded-full bg-signal px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-signal/90"
+              >
+                <Icons.License className="h-4 w-4" />
+                <span className="hidden sm:inline">Register new content</span>
+                <span className="sm:hidden">Register</span>
+              </a>
             )}
           </div>
 
@@ -140,9 +180,9 @@ export default function DashboardShell({ username, walletAddress, records }: Das
                 </div>
 
                 {records.length === 0 ? (
-  <div className="px-6 py-12 text-center">
-    <Icons.Dataset className="mx-auto mb-3 h-8 w-8 text-fog/30" />
-    <p className="text-sm text-fog">You haven&apos;t registered any content yet.</p>
+                  <div className="px-6 py-12 text-center">
+                    <Icons.Dataset className="mx-auto mb-3 h-8 w-8 text-fog/30" />
+                    <p className="text-sm text-fog">You haven&apos;t registered any content yet.</p>
                     
                     <a  href="/upload"
                       className="mt-4 inline-block rounded-full border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:border-signal hover:text-white"
